@@ -22,7 +22,7 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self.L1Loss = nn.L1Loss()
         self.MSELoss = nn.MSELoss()
-        self.grad_loss = GradientLoss()  # sobel
+        self.grad_loss = GradientLoss()  # Sobel
         # self.grad_loss = gradientloss()  # Laplacian
         vgg = vgg19(pretrained=True)
         self.loss_network = nn.Sequential(*list(vgg.features.children())[:12])
@@ -37,7 +37,7 @@ class Loss(nn.Module):
 
         return pixel_loss + perceptual_loss + grad_loss
 
-
+# Sobel
 class GradientLoss(nn.Module):
     def __init__(self):
         super(GradientLoss, self).__init__()
