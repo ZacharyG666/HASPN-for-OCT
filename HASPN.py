@@ -8,6 +8,29 @@ from torchsummary import summary
 from attention import *
 
 
+# Image decomposer for making high-frequency counterparts, there are two ways to obtain them.
+# 1.pre-process original images to prepare high-frequency counterparts. (Recommend)
+# 2.mid-process original images i.e. process images in the training phase to prepare high-frequency counterparts.
+def decomposer(img_tensor, kernel_size=(5, 5), sigma=1.5):
+    img_tensor = img_tensor.detach().clone()
+    img_numpy = img_tensor.cpu().numpy()
+
+    blurred_imgs = []
+    for img in img_numpy:
+        img = np.transpose(img, (1, 2, 0))
+        blurred_img = cv2.GaussianBlur(img, ksize=kernel_size, sigmaX=sigma)
+        if blurred_img.ndim == 2:  # if the img is gray-scale
+            blurred_img = np.expand_dims(blurred_img, axis=-1)
+        # Convert back to channels-first format
+        blurred_img = np.transpose(blurred_img, (2, 0, 1))
+        blurred_imgs.append(blurred_img)
+
+    blurred_img_tensor = torch.from_numpy(np.stack(blurred_imgs)).to(img_tensor.device)
+    high_freq_components = img_tensor - blurred_img_tensor
+
+    return high_freq_components
+
+
 class ResBlock(nn.Module):
 
     def __init__(self, nch_ker, res_scale=1):
@@ -243,28 +266,6 @@ class FusionModule(nn.Module):
 #         out = self.conv(out)
 #
 #         return out
-
-# Image decomposer for making high-frequency counterparts, there are two ways to obtain them.
-# 1.pre-process original images to prepare high-frequency counterparts. (Recommend)
-# 2.mid-process original images i.e. process images in the training phase to prepare high-frequency counterparts.
-def decomposer(img_tensor, kernel_size=(5, 5), sigma=1.5):
-    img_tensor = img_tensor.detach().clone()
-    img_numpy = img_tensor.cpu().numpy()
-
-    blurred_imgs = []
-    for img in img_numpy:
-        img = np.transpose(img, (1, 2, 0))
-        blurred_img = cv2.GaussianBlur(img, ksize=kernel_size, sigmaX=sigma)
-        if blurred_img.ndim == 2:  # if the img is gray-scale
-            blurred_img = np.expand_dims(blurred_img, axis=-1)
-        # Convert back to channels-first format
-        blurred_img = np.transpose(blurred_img, (2, 0, 1))
-        blurred_imgs.append(blurred_img)
-
-    blurred_img_tensor = torch.from_numpy(np.stack(blurred_imgs)).to(img_tensor.device)
-    high_freq_components = img_tensor - blurred_img_tensor
-
-    return high_freq_components
 
 
 class HASPN(nn.Module):
