@@ -244,7 +244,9 @@ class FusionModule(nn.Module):
 #
 #         return out
 
-
+# Image decomposer for making high-frequency counterparts, there are two ways to obtain them.
+# 1.pre-process original images to prepare high-frequency counterparts. (Recommend)
+# 2.mid-process original images i.e. process images in the training phase to prepare high-frequency counterparts.
 def decomposer(img_tensor, kernel_size=(5, 5), sigma=1.5):
     img_tensor = img_tensor.detach().clone()
     img_numpy = img_tensor.cpu().numpy()
@@ -289,11 +291,12 @@ class HASPN(nn.Module):
         LR = LR + identity_LR
         LR_T = self.conv(LR_T)
         LR_T = LR_T + identity_LR_T
-
+        
         LR = F.interpolate(LR, scale_factor=(1, self.up_scale), mode='bilinear', align_corners=True)
         HR_C = self.RecM(LR)
         LR_T = F.interpolate(LR_T, scale_factor=(1, self.up_scale), mode='bilinear', align_corners=True)
         HR_T = self.RecM(LR_T)
+        
         HR = torch.cat([HR_C, HR_T], dim=1)
         HR = self.fusionM(HR)
 
